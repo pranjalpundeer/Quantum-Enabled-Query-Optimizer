@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ⚛️ Quantum Enabled Query Optimizer
 
 A futuristic SQL query analyzer that bridges classical query optimization and quantum computing readiness.  
@@ -45,3 +46,6 @@ cd Quantum-Enabled-Query-Optimizer
 
 # Install dependencies
 pip install -r requirements.txt
+=======
+# Quantum-Enabled-Query-Optimizer
+>>>>>>> f2e0f12f4588077ec51db0a4b39ccadc52eef33a
