@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum SQL Optimizer</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray: #6b7280;
+            --border: #e5e7eb;
+            --error: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Main Grid Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: var(--dark);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2::before {
+            content: "⚡";
+            font-size: 1.2em;
+        }
+
+        .quantum-card h2::before {
+            content: "🔮";
+        }
+
+        /* Button Styles */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: #0da271;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Query Box */
+        .query-box {
+            width: 100%;
+            height: 120px;
+            margin: 15px 0;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .query-box:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Query Examples */
+        .query-examples {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .query-examples h3 {
+            color: var(--dark);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .example-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .example-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light);
+            border-radius: 12px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Results Section */
+        .results {
+            margin-top: 20px;
+        }
+
+        .result-box {
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .classical-result {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 5px solid var(--primary);
+        }
+
+        .quantum-result {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-left: 5px solid var(--secondary);
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .result-header h3 {
+            font-size: 1.3rem;
+            color: var(--dark);
+        }
+
+        .result-content {
+            margin-top: 15px;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .result-item h4 {
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .result-item p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Metrics */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quantum-metrics .metric-value {
+            color: var(--accent);
+        }
+
+        /* JSON Results */
+        .json-results {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .loading h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .quantum-loader {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(99, 102, 241, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-stages {
+            text-align: left;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .progress-stage {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--gray);
+        }
+
+        .progress-stage.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .progress-stage.completed {
+            color: var(--success);
+        }
+
+        /* Error and Success Messages */
+        .error {
+            background: #fef2f2;
+            color: var(--error);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--error);
+            margin: 10px 0;
+        }
+
+        .success {
+            background: #f0fdf4;
+            color: var(--success);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--success);
+            margin: 10px 0;
+        }
+
+        /* Comparison Chart */
+        .comparison {
+            margin-top: 30px;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .example-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-atom"></i> Quantum SQL Optimizer</h1>
+            <p>Compare classical SQL execution vs quantum-optimized execution</p>
+        </div>
+        
+        <div class="main-grid">
+            <div class="card">
+                <h2><i class="fas fa-bolt"></i> Query Input</h2>
+                
+                <label for="sqlQuery"><b>Enter SQL Query:</b></label>
+                <textarea id="sqlQuery" class="query-box" placeholder="Try a simple query first: SELECT name FROM customers LIMIT 3">SELECT name FROM customers LIMIT 3</textarea>
+                
+                <div class="btn-group">
+                    <button type="button" onclick="executeClassical()" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Execute Classical Query
+                    </button>
+                </div>
+                
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="quantumToggle" onchange="toggleQuantum()">
+                        <span class="slider"></span>
+                    </label>
+                    <span><b>Quantum Suggested Route Execution</b></span>
+                </div>
+                
+                <button type="button" onclick="executeQuantum()" id="quantumBtn" class="btn btn-secondary" disabled>
+                    <i class="fas fa-atom"></i> Execute Quantum-Optimized Query
+                </button>
+                
+                <div class="query-examples">
+                    <h3><i class="fas fa-lightbulb"></i> Example Queries (click to try):</h3>
+                    <div class="example-buttons">
+                        <button type="button" onclick="setExampleQuery('SELECT name FROM customers LIMIT 3')" class="example-btn">Simple Test</button>
+                        <button type="button" onclick="setExampleQuery('SELECT * FROM customers')" class="example-btn">All Customers</button>
+                        <button type="button" onclick="setExampleQuery('SELECT c.name, o.product FROM customers c JOIN orders o ON c.id = o.customer_id')" class="example-btn">2-Table Join</button>
+                        <button type="button" onclick="setExampleQuery('SELECT * FROM customers c JOIN orders o ON c.id = o.customer_id JOIN products p ON o.id = p.order_id')" class="example-btn">3-Table Join</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card quantum-card">
+                <h2><i class="fas fa-info-circle"></i> How It Works</h2>
+                <div class="result-item">
+                    <h4><i class="fas fa-microchip"></i> Classical Execution</h4>
+                    <p>Uses traditional SQL query optimization techniques to execute your query.</p>
+                </div>
+                <div class="result-item">
+                    <h4><i class="fas fa-atom"></i> Quantum Optimization</h4>
+                    <p>Leverages quantum algorithms to find the most efficient query execution plan.</p>
+                </div>
+                <div class="result-item">
+                    <h4><i class="fas fa-chart-line"></i> Performance Comparison</h4>
+                    <p>Compare execution times and see the quantum advantage in action.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="loading" class="loading">
+            <div class="quantum-loader"></div>
+            <h3>Quantum Computer is optimizing your query...</h3>
+            <p>This may take 1-2 minutes</p>
+            <div class="progress-stages" id="quantumProgress">
+                <div class="progress-stage">Initializing quantum circuit...</div>
+                <div class="progress-stage">Analyzing table statistics...</div>
+                <div class="progress-stage">Formulating optimization problem...</div>
+                <div class="progress-stage">Running QAOA algorithm...</div>
+                <div class="progress-stage">Interpreting quantum results...</div>
+                <div class="progress-stage">Executing optimized query...</div>
+            </div>
+        </div>
+        
+        <div id="results">
+            <div id="classicalResult" class="result-box classical-result" style="display: none;">
+                <div class="result-header">
+                    <i class="fas fa-bolt"></i>
+                    <h3>Classical Execution Results</h3>
+                </div>
+                <div id="classicalContent"></div>
+            </div>
+            
+            <div id="quantumResult" class="result-box quantum-result" style="display: none;">
+                <div class="result-header">
+                    <i class="fas fa-atom"></i>
+                    <h3>Quantum Optimization Results</h3>
+                </div>
+                <div id="quantumContent"></div>
+            </div>
+            
+            <div id="comparison" class="comparison" style="display: none;">
+                <h3><i class="fas fa-chart-bar"></i> Performance Comparison</h3>
+                <div id="chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let classicalTime = 0;
+        let quantumTime = 0;
+        let quantumRecommendation = null;
+        
+        function toggleQuantum() {
+            const toggle = document.getElementById('quantumToggle');
+            const quantumBtn = document.getElementById('quantumBtn');
+            quantumBtn.disabled = !toggle.checked;
+            
+            if (toggle.checked) {
+                quantumBtn.style.animation = "pulse 2s infinite";
+            } else {
+                quantumBtn.style.animation = "none";
+            }
+        }
+        
+        async function executeClassical() {
+            const query = document.getElementById('sqlQuery').value;
+            const resultDiv = document.getElementById('classicalResult');
+            const contentDiv = document.getElementById('classicalContent');
+            
+            contentDiv.innerHTML = '<div class="result-item"><p><i class="fas fa-spinner fa-spin"></i> Executing query with classical optimizer...</p></div>';
+            resultDiv.style.display = 'block';
+            
+            try {
+                console.log("Sending query to server:", query);
+                
+                const response = await fetch('/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({query: query})
+                });
+                
+                console.log("Response status:", response.status);
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error("Non-JSON response:", text.substring(0, 200));
+                    throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log("Received data:", data);
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Query execution failed');
+                }
+                
+                classicalTime = data.execution_time;
+                
+                let resultsHtml = '';
+                if (data.results && data.results.length > 0) {
+                    resultsHtml = `
+                        <div class="result-item">
+                            <h4>Sample Results (first ${Math.min(data.results.length, 10)} rows):</h4>
+                            <div class="json-results">${JSON.stringify(data.results, null, 2)}</div>
+                        </div>
+                    `;
+                }
+                
+                contentDiv.innerHTML = `
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">${classicalTime.toFixed(4)}s</div>
+                            <div class="metric-label">Execution Time</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.row_count}</div>
+                            <div class="metric-label">Rows Returned</div>
+                        </div>
+                    </div>
+                    <div class="result-item">
+                        <h4>Join Order Used:</h4>
+                        <p>${data.join_order || 'Classical Optimizer Choice'}</p>
+                    </div>
+                    ${resultsHtml || '<div class="result-item"><p>No results returned</p></div>'}
+                `;
+                
+            } catch (error) {
+                console.error("Execution error:", error);
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <p><b>Error:</b> ${error.message}</p>
+                        <p>Check the browser console and server terminal for details.</p>
+                        <p><small>Try a simpler query first: SELECT name FROM customers LIMIT 3</small></p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function executeQuantum() {
+            const query = document.getElementById('sqlQuery').value;
+            const loadingDiv = document.getElementById('loading');
+            const progressDiv = document.getElementById('quantumProgress');
+            const resultDiv = document.getElementById('quantumResult');
+            const contentDiv = document.getElementById('quantumContent');
+            
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'block';
+            
+            // Get all progress stages
+            const stages = progressDiv.querySelectorAll('.progress-stage');
+            
+            // Reset and animate progress
+            stages.forEach(stage => {
+                stage.classList.remove('active', 'completed');
+            });
+            
+            // Simulate progress updates
+            for (let i = 0; i < stages.length; i++) {
+                stages[i].classList.add('active');
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                stages[i].classList.remove('active');
+                stages[i].classList.add('completed');
+            }
+            
+            try {
+                console.log("Sending quantum query to server:", query);
+                
+                const response = await fetch('/execute-quantum', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({query: query})
+                });
+                
+                console.log("Quantum response status:", response.status);
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error("Non-JSON response:", text.substring(0, 200));
+                    throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log("Received quantum data:", data);
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Quantum optimization failed');
+                }
+                
+                quantumTime = data.execution_time;
+                
+                loadingDiv.style.display = 'none';
+                
+                let improvementHtml = '';
+                if (classicalTime && quantumTime) {
+                    const improvement = ((classicalTime - quantumTime) / classicalTime * 100);
+                    const color = classicalTime > quantumTime ? 'var(--success)' : 'var(--error)';
+                    improvementHtml = `
+                        <div class="metric">
+                            <div class="metric-value" style="color: ${color}">${improvement.toFixed(1)}%</div>
+                            <div class="metric-label">Performance Improvement</div>
+                        </div>
+                    `;
+                }
+                
+                let resultsHtml = '';
+                if (data.results && data.results.length > 0) {
+                    resultsHtml = `
+                        <div class="result-item">
+                            <h4>Sample Results (first ${Math.min(data.results.length, 10)} rows):</h4>
+                            <div class="json-results">${JSON.stringify(data.results, null, 2)}</div>
+                        </div>
+                    `;
+                }
+                
+                contentDiv.innerHTML = `
+                    <div class="metrics quantum-metrics">
+                        <div class="metric">
+                            <div class="metric-value">${quantumTime.toFixed(4)}s</div>
+                            <div class="metric-label">Execution Time</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.row_count}</div>
+                            <div class="metric-label">Rows Returned</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${data.confidence ? (data.confidence).toFixed(1) + '%' : 'N/A'}</div>
+                            <div class="metric-label">Quantum Confidence</div>
+                        </div>
+                        ${improvementHtml}
+                    </div>
+                    <div class="result-item">
+                        <h4>Quantum Recommended Join Order:</h4>
+                        <p>${data.join_order || 'N/A'}</p>
+                    </div>
+                    ${resultsHtml || '<div class="result-item"><p>No results returned</p></div>'}
+                `;
+                
+                showComparison();
+                
+            } catch (error) {
+                console.error("Quantum execution error:", error);
+                loadingDiv.style.display = 'none';
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <p><b>Quantum Error:</b> ${error.message}</p>
+                        <p>Check the browser console and server terminal for details.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function showComparison() {
+            const comparisonDiv = document.getElementById('comparison');
+            const chartDiv = document.getElementById('chart');
+            
+            comparisonDiv.style.display = 'block';
+            
+            const data = [{
+                x: ['Classical', 'Quantum'],
+                y: [classicalTime, quantumTime],
+                type: 'bar',
+                marker: {
+                    color: [classicalTime > quantumTime ? 'var(--primary)' : 'var(--success)', 
+                            classicalTime > quantumTime ? 'var(--success)' : 'var(--primary)']
+                }
+            }];
+            
+            const layout = {
+                title: 'Execution Time Comparison',
+                yaxis: {title: 'Time (seconds)'},
+                showlegend: false,
+                font: {family: 'Inter, sans-serif'}
+            };
+            
+            Plotly.newPlot('chart', data, layout);
+        }
+        
+        // Add some helpful query examples
+        function setExampleQuery(example) {
+            document.getElementById('sqlQuery').value = example;
+        }
+        
+        // Add pulse animation for quantum button
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+                50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6); }
+                100% { transform: scale(1); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
