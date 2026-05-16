@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # ⚛️ Quantum Enabled Query Optimizer
 
 A futuristic SQL query analyzer that bridges classical query optimization and quantum computing readiness.  
