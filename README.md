@@ -21,7 +21,6 @@ It answers two questions:
 
 > 🖥️ **Dashboard shows:** SQL input box → real-time complexity score → feature breakdown (JOINs, subqueries, aggregations detected) → normalized quantum state vector → estimated qubit count.
 
-> 🖥️ **Dashboard shows:** Net balance summary card → monthly spending trend chart → expense-by-category pie chart → filterable transaction table with search → budget alert banner.
 
 ---
 
