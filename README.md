@@ -19,10 +19,9 @@ It answers two questions:
 
 ## 🚀 Live Demo
 
-> Run it locally in under 2 minutes — see [Getting Started](#️-getting-started) below.
+> 🖥️ **Dashboard shows:** SQL input box → real-time complexity score → feature breakdown (JOINs, subqueries, aggregations detected) → normalized quantum state vector → estimated qubit count.
 
-![Dashboard Screenshot](https://via.placeholder.com/900x450.png?text=Add+your+Streamlit+screenshot+here)
-*Replace the above with an actual screenshot of your running dashboard*
+> 🖥️ **Dashboard shows:** Net balance summary card → monthly spending trend chart → expense-by-category pie chart → filterable transaction table with search → budget alert banner.
 
 ---
 
